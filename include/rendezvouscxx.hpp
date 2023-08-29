@@ -1,6 +1,6 @@
 #pragma once
 
-#include <i_server.hpp>
+#include <rendezvouscxx/i_server.hpp>
 
 #include <condition_variable>
 #include <functional>

@@ -1,5 +1,5 @@
-#include  "rendezvouscxx.hpp"
-#include  "i_server.hpp"
+#include  <rendezvouscxx.hpp>
+#include  <rendezvouscxx/i_server.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

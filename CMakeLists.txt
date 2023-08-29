@@ -31,8 +31,8 @@ target_sources(${PROJECT_NAME}
             BASE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include
             FILES
                 include/rendezvouscxx.hpp
-                include/i_server.hpp
-                include/simple_server_base.hpp
+                include/rendezvouscxx/i_server.hpp
+                include/rendezvouscxx/simple_server_base.hpp
 )
 
 set_target_properties(${PROJECT_NAME} 
