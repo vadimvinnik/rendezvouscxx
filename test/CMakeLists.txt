@@ -1,4 +1,4 @@
-project(tests
+project(rendevouscxx_test
     VERSION 0.1.0
     LANGUAGES CXX
 )
