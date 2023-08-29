@@ -33,7 +33,7 @@ target_link_libraries(${PROJECT_NAME}
 
 # CTest
 add_test(NAME ${PROJECT_NAME} 
-    COMMAND ${PROJECT_NAME}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
 )
 
 add_custom_command(
