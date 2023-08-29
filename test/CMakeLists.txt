@@ -36,10 +36,10 @@ add_test(NAME ${PROJECT_NAME}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
 )
 
-add_custom_command(
-     TARGET ${PROJECT_NAME}
-     COMMENT "Run tests"
-     POST_BUILD
-     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-     COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIGURATION> -R "^${PROJECT_NAME}$" --output-on-failures
-)
+#add_custom_command(
+#     TARGET ${PROJECT_NAME}
+#     COMMENT "Run tests"
+#     POST_BUILD
+#     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+#     COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIGURATION> -R "^${PROJECT_NAME}$" --output-on-failures
+#)
