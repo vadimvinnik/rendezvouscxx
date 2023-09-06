@@ -42,7 +42,7 @@ set_target_properties(${PROJECT_NAME}
         CXX_EXTENSIONS OFF
 )
 
-if (rendezvouscxx_BUILD_TESTS)
+if (rendezvouscxx_BUILD_TESTS AND NOT EMSCRIPTEN)
     enable_testing()
     add_subdirectory(test)
 endif()
