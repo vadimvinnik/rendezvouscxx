@@ -24,6 +24,13 @@
 #define RENDEZVOUSCXX_TRACE(message) do {} while (false)
 #endif
 
+#ifdef RENDEZVOUSCXX_ENABLE_WAIT_COUNTER
+#include <atomic>
+#define RENDEZVOUSCXX_INCREMENT_WAIT_COUNTER (++m_wait_count, (void)0)
+#else
+#define RENDEZVOUSCXX_INCREMENT_WAIT_COUNTER ((void)0)
+#endif
+
 namespace rendezvouscxx
 {
 
@@ -86,9 +93,9 @@ public:
             m_gate(gate)
         {}
 
-        void connect(ISrv& server)
+        bool connect(ISrv& server)
         {
-            m_gate.connect_server(server);
+            return m_gate.connect_server(server);
         }
 
     private:
@@ -125,7 +132,14 @@ public:
         RENDEZVOUSCXX_TRACE("connect_client() waits for the server");
         m_cv_server_chaned.wait(
             common_lock,
-            [this]() { return m_server != nullptr; });
+            [this]() { RENDEZVOUSCXX_INCREMENT_WAIT_COUNTER; return m_server != nullptr || m_is_closed; });
+
+        if (m_is_closed)
+        {
+            m_is_client_connected = false;
+            return nullptr;
+        }
+
         m_is_mutual_connection = true;
 
         RENDEZVOUSCXX_TRACE("connect_client() has established a mutual connection");
@@ -133,7 +147,7 @@ public:
         return std::make_unique<client_guard_t>(*this, std::move(client_lock));
     }
 
-    void connect_server(ISrv& server)
+    bool connect_server(ISrv& server)
     {
         RENDEZVOUSCXX_TRACE("connect_server() waits for the server mutex");
         std::unique_lock lock(m_mx_server);
@@ -144,7 +158,12 @@ public:
         RENDEZVOUSCXX_TRACE("connect_server() waits the client to connect");
         m_cv_client_chaned.wait(
             common_lock,
-            [this]() { return m_is_client_connected; });
+            [this]() { RENDEZVOUSCXX_INCREMENT_WAIT_COUNTER; return m_is_client_connected || m_is_closed; });
+
+        if (m_is_closed)
+        {
+            return false;
+        }
 
         RENDEZVOUSCXX_TRACE("connect_server() notifies about getting connected");
         m_server = &server;
@@ -153,12 +172,29 @@ public:
         RENDEZVOUSCXX_TRACE("connect_server() has got a client and waits it to get disconnected");
         m_cv_client_chaned.wait(
             common_lock,
-            [this]() { return !m_is_client_connected; });
+            [this]() { return !m_is_client_connected || m_is_closed; });
 
         RENDEZVOUSCXX_TRACE("connect_server() breaks the mutual connection");
         m_is_mutual_connection = false;
         m_cv_disconnected.notify_all();
+
+        return true;
     }
+
+    void close()
+    {
+        {
+            std::unique_lock common_lock(m_mx_common);
+            m_is_closed = true;
+        }
+
+        m_cv_client_chaned.notify_all();
+        m_cv_server_chaned.notify_all();
+    }
+
+#ifdef RENDEZVOUSCXX_ENABLE_WAIT_COUNTER
+    std::uint32_t wait_count() const { return m_wait_count; }
+#endif
 
 private:
     void on_client_disconnecting()
@@ -189,6 +225,11 @@ private:
     bool m_is_client_connected;
     ISrv* m_server;
     bool m_is_mutual_connection;
+    bool m_is_closed;
+
+#ifdef RENDEZVOUSCXX_ENABLE_WAIT_COUNTER
+    std::atomic_uint32_t m_wait_count;
+#endif
 };
 
 template <typename ISrv>

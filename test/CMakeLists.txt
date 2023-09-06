@@ -18,6 +18,7 @@ set_target_properties(${PROJECT_NAME}
 list(APPEND SOURCES
     single_connection_test.cpp
     multiple_connection_test.cpp
+    closing_gate_test.cpp
 )
 
 target_sources(${PROJECT_NAME} 

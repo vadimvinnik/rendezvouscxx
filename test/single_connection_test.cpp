@@ -53,11 +53,13 @@ private:
 };
 
 using test_gate_t = rendezvouscxx::gate_t<i_test_server_t>;
+using test_client_gate_t = typename test_gate_t::client_t;
+using test_server_gate_t = typename test_gate_t::server_t;
 
 class client_thread_t
 {
 public:
-    explicit client_thread_t(test_gate_t& gate) :
+    explicit client_thread_t(test_client_gate_t gate) :
         m_sum(0),
         m_gate(gate),
         m_thread([this]() { run_impl(); })
@@ -77,7 +79,8 @@ private:
     void run_impl()
     {
         m_mx_connect.lock();
-        auto guard = m_gate.connect_client();
+        auto guard = m_gate.connect();
+        CHECK(guard);
 
         m_mx_set_x.lock();
         guard->server().set_x(1000);
@@ -93,7 +96,7 @@ private:
     }
 
     int m_sum;
-    test_gate_t& m_gate;
+    test_client_gate_t m_gate;
     initially_locked_mutex m_mx_connect;
     initially_locked_mutex m_mx_set_x;
     initially_locked_mutex m_mx_set_y;
@@ -106,7 +109,7 @@ private:
 class server_thread_t
 {
 public:
-    explicit server_thread_t(test_gate_t& gate) :
+    explicit server_thread_t(test_server_gate_t gate) :
         m_gate(gate),
         m_thread([this]() { run_impl(); })
     {}
@@ -122,12 +125,13 @@ private:
     void run_impl()
     {
         m_mx_connect.lock();
-        m_gate.connect_server(m_server);
+        auto const has_connected = m_gate.connect(m_server);
+        CHECK(has_connected);
         m_mx_finish.lock();
     }
 
     test_server_t m_server;
-    test_gate_t& m_gate;
+    test_server_gate_t m_gate;
     initially_locked_mutex m_mx_connect;
     initially_locked_mutex m_mx_finish;
     std::thread m_thread;
@@ -139,8 +143,8 @@ TEST_CASE("No ordering", "[RendezVousCxx]")
 {
     rendezvouscxx::gate_t<i_test_server_t> test_gate;
 
-    client_thread_t client_thread { test_gate };
-    server_thread_t server_thread { test_gate };
+    client_thread_t client_thread { test_gate.client() };
+    server_thread_t server_thread { test_gate.server() };
 
     client_thread.go_set_x();
     client_thread.go_set_y();
@@ -161,8 +165,8 @@ TEST_CASE("Client connects first and waits for a server", "[RendezVousCxx]")
 {
     rendezvouscxx::gate_t<i_test_server_t> test_gate;
 
-    client_thread_t client_thread { test_gate };
-    server_thread_t server_thread { test_gate };
+    client_thread_t client_thread { test_gate.client() };
+    server_thread_t server_thread { test_gate.server() };
 
     client_thread.go_connect();
     server_thread.go_connect();
@@ -185,8 +189,8 @@ TEST_CASE("Server connects first and waits for a client", "[RendezVousCxx]")
 {
     rendezvouscxx::gate_t<i_test_server_t> test_gate;
 
-    client_thread_t client_thread { test_gate };
-    server_thread_t server_thread { test_gate };
+    client_thread_t client_thread { test_gate.client() };
+    server_thread_t server_thread { test_gate.server() };
 
     server_thread.go_connect();
     client_thread.go_connect();
@@ -209,8 +213,8 @@ TEST_CASE("Client connects first, server connects and tries to finish immediatel
 {
     rendezvouscxx::gate_t<i_test_server_t> test_gate;
 
-    client_thread_t client_thread { test_gate };
-    server_thread_t server_thread { test_gate };
+    client_thread_t client_thread { test_gate.client() };
+    server_thread_t server_thread { test_gate.server() };
 
     client_thread.go_connect();
     server_thread.go_connect();
@@ -233,8 +237,8 @@ TEST_CASE("Server connects first, waits for a client and tries to finish immedia
 {
     rendezvouscxx::gate_t<i_test_server_t> test_gate;
 
-    client_thread_t client_thread { test_gate };
-    server_thread_t server_thread { test_gate };
+    client_thread_t client_thread { test_gate.client() };
+    server_thread_t server_thread { test_gate.server() };
 
     server_thread.go_connect();
     client_thread.go_connect();
