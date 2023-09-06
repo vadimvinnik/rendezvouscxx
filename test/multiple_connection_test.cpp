@@ -64,19 +64,22 @@ TEST_CASE("A single client connecting to a single server thread", "[RendezVousCx
 
     test_server_t server;
 
-    auto const client_func = [&gate]()
+    auto client_gate = gate.client();
+    auto server_gate = gate.server();
+
+    auto const client_func = [&client_gate]()
     {
         std::cout << "Client waits for a server\n";
-        auto const guard = gate.connect_client();
+        auto const guard = client_gate.connect();
         std::cout << "Client makes a call\n";
         guard->server().func();
         std::cout << "Client finishes\n";
     };
 
-    auto const server_func = [&server, &gate]()
+    auto const server_func = [&server, &server_gate]()
     {
         std::cout << "Server waits for the  client 1\n";
-        gate.connect_server(server);
+        server_gate.connect(server);
         std::cout << "Server finished\n";
     };
 
@@ -100,23 +103,26 @@ TEST_CASE("Multiple clients connecting to a single server thread", "[RendezVousC
 
     test_server_t server;
 
-    auto const client_func = [&gate]()
+    auto client_gate = gate.client();
+    auto server_gate = gate.server();
+
+    auto const client_func = [&client_gate]()
     {
         std::cout << "Client waits for a server\n";
-        auto const guard = gate.connect_client();
+        auto const guard = client_gate.connect();
         std::cout << "Client makes a call\n";
         guard->server().func();
         std::cout << "Client finishes\n";
     };
 
-    auto const server_func = [&server, &gate]()
+    auto const server_func = [&server, &server_gate]()
     {
         std::cout << "Server waits for the  client 1\n";
-        gate.connect_server(server);
+        server_gate.connect(server);
         std::cout << "Server waits for the client 2\n";
-        gate.connect_server(server);
+        server_gate.connect(server);
         std::cout << "Server waits for the client 3\n";
-        gate.connect_server(server);
+        server_gate.connect(server);
         std::cout << "Server finished\n";
     };
 
@@ -148,19 +154,22 @@ TEST_CASE("Multiple clients connecting to multiple server threads", "[RendezVous
 
     test_server_t server;
 
-    auto const client_func = [&gate]()
+    auto client_gate = gate.client();
+    auto server_gate = gate.server();
+
+    auto const client_func = [&client_gate]()
     {
         std::cout << "Client waits for a server\n";
-        auto const guard = gate.connect_client();
+        auto const guard = client_gate.connect();
         std::cout << "Client makes a call\n";
         guard->server().func();
         std::cout << "Client finishes\n";
     };
 
-    auto const server_func = [&server, &gate]()
+    auto const server_func = [&server, &server_gate]()
     {
         std::cout << "Server waits for a client\n";
-        gate.connect_server(server);
+        server_gate.connect(server);
         std::cout << "Server finished\n";
     };
 

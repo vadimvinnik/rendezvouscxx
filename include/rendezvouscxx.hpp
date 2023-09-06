@@ -63,10 +63,52 @@ public:
         std::unique_lock<std::mutex> m_lock;
     };
 
+    class client_t
+    {
+    public:
+        explicit client_t(gate_t<ISrv>& gate) :
+            m_gate(gate)
+        {}
+
+        std::unique_ptr<client_guard_t> connect()
+        {
+            return m_gate.connect_client();
+        }
+
+    private:
+        gate_t<ISrv>& m_gate;
+    };
+
+    class server_t
+    {
+    public:
+        explicit server_t(gate_t<ISrv>& gate) :
+            m_gate(gate)
+        {}
+
+        void connect(ISrv& server)
+        {
+            m_gate.connect_server(server);
+        }
+
+    private:
+        gate_t<ISrv>& m_gate;
+    };
+
     gate_t() :
         m_is_client_connected { false },
         m_server { nullptr }
     {}
+
+    client_t client()
+    {
+        return client_t(*this);
+    }
+
+    server_t server()
+    {
+        return server_t(*this);
+    }
 
     std::unique_ptr<client_guard_t> connect_client()
     {
@@ -148,6 +190,12 @@ private:
     ISrv* m_server;
     bool m_is_mutual_connection;
 };
+
+template <typename ISrv>
+using client_gate_t = typename gate_t<ISrv>::client_t;
+
+template <typename ISrv>
+using server_gate_t = typename gate_t<ISrv>::server_t;
 
 } // namespace rendezvouscxx
 
